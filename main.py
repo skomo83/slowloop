@@ -124,7 +124,10 @@ def create_graph(data_frame, name, graph_type):
     #plt.tight_layout()
     plt.xlabel({graph_type}, labelpad=14)
     plt.ylabel(f"# of {name} Events", labelpad=14)
-    plt.title(f"{name} Events for each day - from {passed_date} to {today}", y=1.02);
+    if "date" in graph_type.lower():
+        thing = "day"
+    else: thing = "DVR"
+    plt.title(f"{name} Events for each {thing} - from {passed_date} to {today}", y=1.02);
     plt.savefig(f"{name}By{graph_type}.png", dpi=300, bbox_inches='tight')
     print(f"Graph for [blue]{name} by {graph_type}[/blue] created ")
 
