@@ -1,10 +1,13 @@
-import pprint
+
 from rich import print
 from rich.traceback import install
 install()
 
 import os
+from pathlib import Path
 from datetime import date, timedelta
+
+from tkinter import *  # Python 3
 
 import re
 import collections
@@ -12,13 +15,15 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 import csv
+import sys
 from io import StringIO
 
 
 ############################################### GLOBAL VARIABLES ###############################################
 
 print_data = False
-days_prior = 7
+print_line = False
+days_prior = 30
 today = date.today()
 passed_date = today - timedelta(days = days_prior)
 
@@ -54,33 +59,34 @@ def get_all_data(path):
 
 
 def get_filtered_data(keyword):
-        
-    #wanted_data = []
     filtered_dates = []
-    #backfill_dates.append(f"Date,IP")
     count = 0
     filtered_data_counter=0
+    data_counter=0
+    
     for index, item, in enumerate(big_data):
         for line in item:
             count+=1
             if keyword.lower() in line.lower():
-                filtered_data_counter += 1
-                #pp.pprint(f"{line}")
+                data_counter += 1
+                if print_line: print(line)
                 day=int(line[:2])
                 month=int(line[3:5])
                 year=int(line[6:10])
                 line_date= date(year,month,day)
                 if line_date > passed_date:
+                    filtered_data_counter += 1
                     if "loop" in keyword.lower():
-                       filtered_dates.append(f'{line_date},{ip_list[index]}')
+                        filtered_dates.append(f'{line_date},{ip_list[index]}')
                     elif "backfilling" in keyword.lower():
                         x = line.find("camera")
                         #print(line[x:])
                         filtered_dates.append(f'{line_date},{ip_list[index]},{ip_list[index]}-{line[x:]}')
 
     if print_data: print(filtered_dates)
-    print(f"Amount of {keyword} events = {filtered_data_counter}")
+    print(f"Amount of {keyword} events after {passed_date} = {filtered_data_counter} from a total of {data_counter} events ")
     return sort_data(filtered_dates)
+
 
 def sort_data(data):
     if print_data: print(data)
@@ -88,6 +94,7 @@ def sort_data(data):
     if print_data: print("Sorted Data")
     sorted_data.sort()
     return sorted_data
+
 
 def create_dataframe(date_data):
     header = date_data[0].split(",") 
@@ -98,35 +105,32 @@ def create_dataframe(date_data):
     if print_data: print(pd_data_frame)
     return pd_data_frame
 
+
 def create_graphs(data, name):
     data_frame = create_dataframe(data)
     if not data_frame.empty:
         if print_data: print(data_frame)
-        create_date_graph(data_frame, name)
-        create_ip_graph(data_frame, name)
+        #create_date_graph(data_frame, name)
+        #create_ip_graph(data_frame, name)
+        create_graph(data_frame, name, 'Date')
+        create_graph(data_frame, name, 'IP')
         
         if "backfill" in name.lower():
             create_date_camera_graph(data_frame, name)
 
-def create_date_graph(data_frame, name):
-    data_frame['Date'].value_counts().sort_index().plot(kind='bar');
+
+def create_graph(data_frame, name, graph_type):
+    data_frame[graph_type].value_counts().sort_index().plot(kind='bar');
     #plt.tight_layout()
-    plt.xlabel("Dates", labelpad=14)
+    plt.xlabel({graph_type}, labelpad=14)
     plt.ylabel(f"# of {name} Events", labelpad=14)
     plt.title(f"{name} Events for each day - from {passed_date} to {today}", y=1.02);
-    plt.savefig(f"{name}ByDate.png", dpi=300, bbox_inches='tight')
-
-
-def create_ip_graph(data_frame, name):
-    data_frame['IP'].value_counts().sort_index().plot(kind='bar');
-    #plt.tight_layout()
-    plt.xlabel("IP", labelpad=14)
-    plt.ylabel(f"# of {name} Events", labelpad=14)
-    plt.title(f"{name} Events for each DVR - from {passed_date} to {today}", y=1.02);
-    plt.savefig(f"{name}ByIP.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{name}By{graph_type}.png", dpi=300, bbox_inches='tight')
+    print(f"Graph for [blue]{name} by {graph_type}[/blue] created ")
 
 
 def create_date_camera_graph(data_frame, name):
+    graph_type = "Date & Camera"
     plt.figure(figsize=(30, 10))
     count=2
     data = data_frame.groupby(["Date","Camera"]).size().loc[lambda x : x>=count]
@@ -137,30 +141,52 @@ def create_date_camera_graph(data_frame, name):
     plt.title(f"{name} Events (over {count}) for each Day per Camera - from {passed_date} to {today}", y=1.02);
     data.plot(kind='bar')
     plt.savefig(f"{name}ByDate&Camera.png", dpi=300, bbox_inches='tight')
+    print(f"Graph for [blue]{name} by {graph_type}[/blue] created ")
+
+def get_path_from_clipboard():
+    r = Tk()
+    r.withdraw()
+    #r.clipboard_clear()
+    r.update() # now it stays on the clipboard after the window is closed
+    try:
+        pasted_data =  Path(r.clipboard_get())
+    except TclError:
+        pasted_data = None
+    r.destroy()
+    if pasted_data:
+        if os.path.exists(pasted_data):
+            print(f"The working folder is \n{pasted_data}\n")
+            return pasted_data
+        else:
+            path_error = "not a valid path"
+    else:
+        path_error = "missing"
+
+    print(f"\n\n[red]ERROR - Folder path is {path_error}[/red]\nPlease copy the folder path before running.\nThe program will now exit\n\n")
+    sys.exit()
 
 
 ############################################### END OF FUNCTIONS ###############################################
 
-#TODO write input function to get the path and format for the / 
-
-folder = "C:/Users/aschofield/C R KENNEDY and COMPANY PROPRIETARY LIMITED/Scott Iles - SRS Performance issue/Exports/20211110"
+#get the folder from the clipboard and run the program
+folder = get_path_from_clipboard()
 
 get_all_data(folder)
 
-backfill_dates = get_filtered_data("start backfilling")
 slowloop_dates = get_filtered_data("slowloop")
 loopratelow_dates = get_filtered_data("Looprate too low")
+backfill_dates = get_filtered_data("start backfilling")
 
-backfill_dates.insert(0,f"Date,IP,Camera")
 slowloop_dates.insert(0,f"Date,IP")
 loopratelow_dates.insert(0,f"Date,IP")
+backfill_dates.insert(0,f"Date,IP,Camera")
 
-collections.Counter(backfill_dates)
 collections.Counter(slowloop_dates) 
 collections.Counter(loopratelow_dates)
+collections.Counter(backfill_dates)
 
 create_graphs(slowloop_dates, "SlowLoop")
 create_graphs(loopratelow_dates, "LoopRateLow")
-create_graphs(backfill_dates, "Backfill")
+create_graphs(backfill_dates, "Backfill") #back fill created a bigger graph that the others so we run this one last
 
-print(f"Program Completed, please check the path below for any images\n{folder}")
+print(f"\n[green]Program Completed[/green], please check the path below for any graph images\n\n{folder}\n\n")
