@@ -1,26 +1,25 @@
 
 from rich import print
 from rich.traceback import install
+
 install()
 
+import collections
+import csv
 import os
-from pathlib import Path
+import sys
 from datetime import date, timedelta
-
+from io import StringIO
+from pathlib import Path
 from tkinter import *  # Python 3
 
-import re
-import collections
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
-import csv
-import sys
-from io import StringIO
-
 
 ############################################### GLOBAL VARIABLES ###############################################
 
+ask_count = False
 print_data = False
 print_line = False
 days_prior = 30
@@ -80,7 +79,6 @@ def get_filtered_data(keyword):
                         filtered_dates.append(f'{line_date},{ip_list[index]}')
                     elif "backfilling" in keyword.lower():
                         x = line.find("camera")
-                        #print(line[x:])
                         filtered_dates.append(f'{line_date},{ip_list[index]},{ip_list[index]}-{line[x:]}')
 
     if print_data: print(filtered_dates)
@@ -110,8 +108,6 @@ def create_graphs(data, name):
     data_frame = create_dataframe(data)
     if not data_frame.empty:
         if print_data: print(data_frame)
-        #create_date_graph(data_frame, name)
-        #create_ip_graph(data_frame, name)
         create_graph(data_frame, name, 'Date')
         create_graph(data_frame, name, 'IP')
         
@@ -132,10 +128,31 @@ def create_graph(data_frame, name, graph_type):
     print(f"Graph for [blue]{name} by {graph_type}[/blue] created ")
 
 
+def get_count():
+    if ask_count:
+        data_valid = False
+        while data_valid == False:
+                count=input("\nHow many backfill events do you want to ignore per Camera per Day from the Graph ? : ")
+                try:
+                        count = int(count)
+                except:
+                    print("Error : Please use numbers ")
+                    continue
+                        
+                if ( count <= 0 ):
+                    print("Error <= 0 : Please use numbers above 0 ")
+                    continue
+                else:
+                    data_valid = True
+    else: count=3
+    
+    return count
+
+
 def create_date_camera_graph(data_frame, name):
     graph_type = "Date & Camera"
     plt.figure(figsize=(30, 10))
-    count=2
+    count=get_count()
     data = data_frame.groupby(["Date","Camera"]).size().loc[lambda x : x>=count]
     if print_data: print(data)
     #plt.tight_layout()
