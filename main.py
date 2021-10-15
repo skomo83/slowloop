@@ -17,7 +17,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 
+
 ############################################### GLOBAL VARIABLES ###############################################
+
 
 ask_count = False
 print_data = False
@@ -26,14 +28,16 @@ days_prior = 30
 today = date.today()
 passed_date = today - timedelta(days = days_prior)
 
-big_data = []
-ip_list = []
-
+#big_data = []
+#ip_list = []
 
 ############################################### START OF FUNCTIONS ###############################################
 
 
 def get_all_data(path):
+    
+    big_data = []
+    ip_list = []
     
     working_dir = path
     folders = os.listdir(working_dir)
@@ -57,7 +61,7 @@ def get_all_data(path):
     return big_data, ip_list
 
 
-def get_filtered_data(keyword):
+def get_filtered_data(keyword, big_data: list, ip_list: list):
     filtered_dates = []
     count = 0
     filtered_data_counter=0
@@ -188,25 +192,37 @@ def get_path_from_clipboard():
 
 ############################################### END OF FUNCTIONS ###############################################
 
-#get the folder from the clipboard and run the program
-folder = get_path_from_clipboard()
+def main():
+    
+    big_data = []
+    ip_list = []
+    
+    #get the folder from the clipboard and run the program
+    folder = get_path_from_clipboard()
 
-get_all_data(folder)
+    big_data, ip_list = get_all_data(folder)
 
-slowloop_dates = get_filtered_data("slowloop")
-loopratelow_dates = get_filtered_data("Looprate too low")
-backfill_dates = get_filtered_data("start backfilling")
+    slowloop_dates = get_filtered_data("slowloop", big_data, ip_list)
+    loopratelow_dates = get_filtered_data("Looprate too low", big_data, ip_list)
+    backfill_dates = get_filtered_data("start backfilling", big_data, ip_list)
 
-slowloop_dates.insert(0,f"Date,IP")
-loopratelow_dates.insert(0,f"Date,IP")
-backfill_dates.insert(0,f"Date,IP,Camera")
+    slowloop_dates.insert(0,f"Date,IP")
+    loopratelow_dates.insert(0,f"Date,IP")
+    backfill_dates.insert(0,f"Date,IP,Camera")
 
-collections.Counter(slowloop_dates) 
-collections.Counter(loopratelow_dates)
-collections.Counter(backfill_dates)
+    collections.Counter(slowloop_dates) 
+    collections.Counter(loopratelow_dates)
+    collections.Counter(backfill_dates)
 
-create_graphs(slowloop_dates, "SlowLoop")
-create_graphs(loopratelow_dates, "LoopRateLow")
-create_graphs(backfill_dates, "Backfill") #back fill created a bigger graph that the others so we run this one last
+    create_graphs(slowloop_dates, "SlowLoop")
+    create_graphs(loopratelow_dates, "LoopRateLow")
+    create_graphs(backfill_dates, "Backfill") #back fill created a bigger graph that the others so we run this one last
 
-print(f"\n[green]Program Completed[/green], please check the path below for any graph images\n\n{folder}\n\n")
+    print(f"\n[green]Program Completed[/green], please check the path below for any graph images\n\n{folder}\n\n")
+
+
+if __name__ == "__main__":
+    
+    main()
+    
+    
