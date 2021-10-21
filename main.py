@@ -24,7 +24,7 @@ import pandas as pd
 ask_count = False
 print_data = False
 print_line = False
-days_prior = 30
+days_prior = 14
 today = date.today()
 passed_date = today - timedelta(days = days_prior)
 
