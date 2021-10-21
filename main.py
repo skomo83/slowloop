@@ -4,6 +4,7 @@ from rich.traceback import install
 
 install()
 
+import argparse
 import collections
 import csv
 import os
@@ -193,6 +194,15 @@ def get_path_from_clipboard():
 ############################################### END OF FUNCTIONS ###############################################
 
 def main():
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-dp", "--days_prior", help="Override the default value of 14 days prior for graph generation", type=int)
+
+    args = parser.parse_args()
+    if args.days_prior:
+        global days_prior 
+        days_prior = args.days_prior
+        print(f"Using {days_prior} as the days_prior to generate the graphs")
     
     big_data = []
     ip_list = []
